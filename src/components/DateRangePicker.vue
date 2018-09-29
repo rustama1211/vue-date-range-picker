@@ -337,7 +337,7 @@ export default {
       if (date.isValid()) {
         this.selectDate(date)
       }
-      if(this.step == 'endDate' || this.step== 'endDateCompare') {
+      if(this.step == 'selectEndDate' || this.step== 'selectEndDateCompare') {
         this.nextStep();
       }
       
