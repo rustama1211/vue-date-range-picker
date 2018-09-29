@@ -148,7 +148,6 @@ export default {
             endDate: moment().subtract(1,'day').endOf('day'),
             processDate: function(start,end,rangeSelect) {
               let nDays = 0;
-              console.log('dsd',rangeSelect);
               if (rangeSelect == 'lastMonth') {
                 nDays =moment(start).subtract(1,'month').daysInMonth();
               }
