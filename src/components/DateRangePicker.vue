@@ -16,6 +16,7 @@
         v-on:goToNextMonth="goToNextMonth"
         v-on:selectDate="selectDate"
         v-on:nextStep="nextStep"
+        :popperShow="popperShow"
       />
     </div>
 
@@ -74,8 +75,8 @@
         </div>
       </div>
       <div class="form-group form-inline justify-content-end mb-0">
-        <button type="button" class="btn btn-light" @click="cancel">Cancel</button>
-        <button type="button" class="btn btn-warning ml-2" @click="submit">Submit</button>
+        <button type="button" style="width:auto;"class="btn btn-warning ml-2" :disabled="dateChanged === false" @click="submit">Submit</button>
+        <button type="button" class="btn btn-light" :disabled="selectedDateSubmit === false" @click="cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -99,6 +100,10 @@ export default {
     allowCompare: {
       type: Boolean,
       default: true
+    },
+    popperShow:{
+      type:Boolean,
+      default:false
     },
     ranges: {
       type: Object,
@@ -192,15 +197,20 @@ export default {
   },
   data: () => {
     return {
+      dateChanged : false,
+      selectedDateSubmit:false,
+      selectedDate:null,
       startDate: moment(),
       endDate: moment(),
       startDateCompare: moment(),
       endDateCompare: moment(),
       rangeSelect: null,
+      rangeSelectOri:null,
       rangeSelectCompare: null,
+      rangeSelectCompareOri: null,
       compare: false,
       month: moment().subtract(1, 'month').startOf('month'),
-      step: null
+      step: 'selectStartDate',
     }
   },
   computed: {
@@ -209,9 +219,11 @@ export default {
     },
     // For multi prop watchers
     range: function() {
+      this.dateChanged = true;
       return this.startDate, this.endDate
     },
     rangeCompare: function() {
+      this.dateChanged = true;
       return this.startDateCompare, this.endDateCompare
     }
   },
@@ -246,16 +258,18 @@ export default {
         this.$refs.startDate.focus()
       }
 
-      if(this.step=='selectEndDate') {
+      /*if(this.step=='selectEndDate') {
         this.step = 'selectStartDate';
       } else if(this.step == 'selectEndDateCompare') {
         this.step = 'selectStartDateCompare';
-      }
+      }*/
+
       if(this.compare){
         this.selectRangeCompare(this.rangeSelectCompare);
       }
     },
     selectRangeCompare: function(rangeKey) {
+
       let predefinedRange = false
 
       // Predefined ranges
@@ -274,18 +288,18 @@ export default {
         }
       }
       
-      if(this.step=='selectEndDate') {
-        this.step = 'selectStartDate';
-      } else if(this.step == 'selectEndDateCompare') {
+      /*if(this.step == 'selectEndDateCompare') {
         this.step = 'selectStartDateCompare';
-      }
+      }*/
+
       // Custom range
-      if (!predefinedRange && this.step == null && this.compare) {
-        this.step = 'selectStartDateCompare'
+      if (!predefinedRange && this.compare && rangeKey ==='custom' ) {
+        //this.step = 'preSelectStartDateCompare';
         this.$refs.startDateCompare.focus()
       }
     },
     selectDate: function(date) {
+
       if (this.step == 'selectStartDate') {
         //this.endDate = date;
         this.startDate = date;
@@ -294,41 +308,47 @@ export default {
         this.endDate = date
       } else if (this.step == 'selectStartDateCompare') {
         this.startDateCompare = date
+
       } else if (this.step == 'selectEndDateCompare') {
         this.endDateCompare = date
-      }else {
-        if(this.compare && this.rangeSelectCompare === 'custom'){
+      } else if(this.step == 'preSelectStartDateCompare') {
           this.$refs.startDateCompare.focus();
-        }else
-        {
+      }else {
           this.$refs.startDate.focus();
-        }
-        
       }
     
     },
     // Step flow for date range selections
     nextStep: function() {
       if(this.step == null) {
-        this.step == 'selectStartDate';
+        this.step = 'selectStartDate'
         this.$refs.startDate.focus();
       }
       else if (this.step == 'selectStartDate') {
-        this.step = 'selectEndDate'
+        
+        this.step = 'selectEndDate';
         this.$refs.endDate.focus()
       } else if (this.step == 'selectEndDate') {
-        this.step = null
-        if(this.compare){
+
+          this.step = null
+        
+        if(this.compare && this.rangeSelectCompare !=='custom' ){
           this.selectRangeCompare(this.rangeSelectCompare);
+        } else if(this.compare && this.rangeSelectCompare ==='custom'){
+          this.step = 'preSelectStartDateCompare';
         }
         this.$refs.endDate.blur()
-      } else if (this.step == 'selectStartDateCompare') {
+      } 
+      else if (this.step == 'selectStartDateCompare') {
         this.step = 'selectEndDateCompare'
         this.$refs.endDateCompare.focus()
       } else if (this.step == 'selectEndDateCompare') {
-        this.step = null
-        this.$refs.endDateCompare.blur()
-        this.$refs.startDate.focus();
+         
+            this.step = null
+            this.$refs.endDateCompare.blur()
+          
+       
+         
       }
     },
     // Try to update the step date from an input value
@@ -336,6 +356,7 @@ export default {
       let date = moment(input.target.value, 'YYYY-MM-DD')
       if (date.isValid()) {
         this.selectDate(date)
+        this.selectedDateSubmit = true;
       }
       if(this.step == 'selectEndDate' || this.step== 'selectEndDateCompare') {
         this.nextStep();
@@ -344,20 +365,40 @@ export default {
     },
     // Submit button
     submit: function() {
-      this.$emit('submit', {
+      const dataSubmit = {
         startDate: this.startDate,
         endDate: this.endDate,
         compare: this.compare,
         startDateCompare: this.startDateCompare,
         endDateCompare: this.endDateCompare
-      })
+      };
+      this.$emit('submit',dataSubmit );
+      this.selectedDate = Object.assign({compare:this.compare,rangeSelect:this.rangeSelect,rangeSelectCompare:this.rangeSelectCompare},dataSubmit);
+      this.selectedDateSubmit = false;
     },
     // Cancel button
     cancel: function() {
       this.$emit('cancel')
+      if (this.selectedDate && this.selectedDateSubmit) {
+
+        this.selectedDateSubmit =false;
+        this.dateChanged = false;
+
+        this.startDate=this.selectedDate.startDate;
+        this.endDate = this.selectedDate.endDate;
+        this.compare = this.selectedDate.compare;
+        this.startDateCompare = this.selectedDate.startDateCompare;
+        this.endDateCompare = this.selectedDate.endDateCompare;
+        this.rangeSelect = this.selectedDate.rangeSelect;
+        this.rangeSelectCompare = this.rangeSelectCompare;
+          //restore data to selected Date
+
+      }
     }
   },
   watch: {
+    popperShow: function(newVal) {
+    },
     compare : function(newVal) {
       //reset
       if(this.step){
@@ -366,9 +407,14 @@ export default {
       if(newVal === true) {
         this.selectRangeCompare(this.rangeSelectCompare);
       }
+
+      if(this.selectedDate && this.selectedDate.compare != newVal) {
+        this.dateChanged = true;
+      }
       
     },
     rangeSelect: function(rangeKey) {
+
       this.selectRange(rangeKey)
     },
     rangeSelectCompare: function(rangeKey) {
@@ -376,7 +422,6 @@ export default {
     },
     range: function() {
       let predefinedRange = false
-
       // Predefined ranges
       for (const rangeKey of Object.keys(this.ranges)) {
         const range = this.ranges[rangeKey]
@@ -415,6 +460,11 @@ export default {
           this.rangeSelectCompare = 'custom'
         }
       }
+
+      /*if(this.rangeSelectCompare === 'custom' && !~['selectStartDateCompare','selectEndDateCompare'].indexOf(this.step))  {
+          this.$refs.startDateCompare.focus();
+          this.step = 'selectStartDateCompare';
+      }*/
     }
   },
   filters: {
@@ -426,6 +476,14 @@ export default {
     // Initialize ranges
     this.rangeSelect = this.defaultRangeSelect
     this.rangeSelectCompare = this.defaultRangeSelectCompare
+
+    this.selectedDate = { startDate:this.startDate ,endDate:this.endDate,
+
+                          rangeSelect:this.rangeSelect,rangeSelectCompare:this.rangeSelectCompare,
+
+                          compare:this.compare,
+
+                          startDateCompare: this.startDateCompare, endDateCompare: this.endDateCompare };
   },
   components: { DateRangePickerCalendar, FontAwesomeIcon }
 }

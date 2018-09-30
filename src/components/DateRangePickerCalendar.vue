@@ -95,7 +95,6 @@ export default {
       }*/
     },
     dayClick: function(day) {
-     
       if (this.step != null) {
        
         if(this.step == 'selectEndDate' && day.isBefore(this.startDate)) {
@@ -108,13 +107,14 @@ export default {
         
         this.selectDate(day);
         this.nextStep()
-      }else
+      }
+      else
       {
         
         if(this.step == 'selectEndDate' && day.isBefore(this.startDate)) {
           return;
         }
-        if(this.step == 'selectDndDateCompare' && day.isBefore(this.startDateCompare)) {
+        if(this.step == 'selectEndDateCompare' && day.isBefore(this.startDateCompare)) {
           return;
         }
         this.nextStep();
