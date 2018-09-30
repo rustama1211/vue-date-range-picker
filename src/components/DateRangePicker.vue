@@ -93,6 +93,18 @@ fontawesome.library.add(faCaretRight)
 
 export default {
   props: {
+    startDateProp: {
+        type: Object,
+        default: function() {
+          return moment();
+        }
+    },
+    endDateProp: {
+        type: Object,
+        default: function() {
+          return moment();
+        }
+    },
     calendarCount: {
       type: Number,
       default: 2
@@ -397,6 +409,25 @@ export default {
     }
   },
   watch: {
+    startDateProp :function(newVal) {
+      this.rangeSelect  = 'custom';
+      //this.$set(this,'startDate',newVal);
+      this.startDate = newVal
+      //this.$set(this,'month' , moment(this.startDate));
+      this.$refs.startDate.value =this.$options.filters.dateFormat(this.startDate);
+
+    },
+    endDateProp: function(newVal){
+      //this.$nextTick(() => {
+        this.rangeSelect  = 'custom';
+        this.endDate = moment(newVal)
+        //this.$set(this,'endDate',moment(newVal));
+        //this.$set(this,'month' , moment(this.endDate));
+        this.$refs.endDate.value =this.$options.filters.dateFormat(this.endDate);
+
+     // })
+     
+    },
     popperShow: function(newVal) {
     },
     compare : function(newVal) {
