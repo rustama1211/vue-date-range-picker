@@ -42,7 +42,6 @@ export default {
   },
   computed: {
     displayMonth: function() {
-      console.log('month berubah',this.month.format('YYYY-MM-DD'));
       return moment(this.month).add(this.calendarIndex - 1, 'month')
     },
     days: function() {
