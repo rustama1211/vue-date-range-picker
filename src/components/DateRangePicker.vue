@@ -240,6 +240,15 @@ export default {
     }
   },
   methods: {
+    updateSelectedDate: function() {
+      this.selectedDate = { startDate:this.startDate ,endDate:this.endDate,
+
+                          rangeSelect:this.rangeSelect,rangeSelectCompare:this.rangeSelectCompare,
+
+                          compare:this.compare,
+
+                          startDateCompare: this.startDateCompare, endDateCompare: this.endDateCompare };
+    },
     goToPrevMonth: function() {
       this.month = moment(this.month).subtract(1, 'month')
     },
@@ -307,7 +316,10 @@ export default {
       // Custom range
       if (!predefinedRange && this.compare && rangeKey ==='custom' ) {
         //this.step = 'preSelectStartDateCompare';
-        this.$refs.startDateCompare.focus()
+        this.$nextTick(()=>{
+          this.$refs.startDateCompare.focus()
+        });
+        
       }
     },
     selectDate: function(date) {
@@ -415,6 +427,7 @@ export default {
       this.startDate = newVal
       //this.$set(this,'month' , moment(this.startDate));
       this.$refs.startDate.value =this.$options.filters.dateFormat(this.startDate);
+      this.updateSelectedDate();
 
     },
     endDateProp: function(newVal){
@@ -424,6 +437,7 @@ export default {
         //this.$set(this,'endDate',moment(newVal));
         //this.$set(this,'month' , moment(this.endDate));
         this.$refs.endDate.value =this.$options.filters.dateFormat(this.endDate);
+        this.updateSelectedDate();
 
      // })
      
@@ -508,13 +522,7 @@ export default {
     this.rangeSelect = this.defaultRangeSelect
     this.rangeSelectCompare = this.defaultRangeSelectCompare
 
-    this.selectedDate = { startDate:this.startDate ,endDate:this.endDate,
-
-                          rangeSelect:this.rangeSelect,rangeSelectCompare:this.rangeSelectCompare,
-
-                          compare:this.compare,
-
-                          startDateCompare: this.startDateCompare, endDateCompare: this.endDateCompare };
+    this.updateSelectedDate();
   },
   components: { DateRangePickerCalendar, FontAwesomeIcon }
 }
