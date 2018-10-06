@@ -31,16 +31,20 @@
       <div class="form-group form-inline flex-nowrap">
         <input type="text" class="form-control w-100 daterangepicker-date-input"
           ref="startDate"
+          :class="{'date-selected': step === null || step === 'selectStartDate'}"
+          id="startDate"
           :value="startDate | dateFormat"
-          @focus="step = 'selectStartDate'" @blur="inputDate"
+          @focus="checkMonth($event);step = 'selectStartDate'" @blur="inputDate"
         >
         <span class="mx-2">
         <font-awesome-icon icon="caret-right" fixed-width />
         </span>
         <input type="text" class="form-control w-100 daterangepicker-date-input"
           ref="endDate"
+          :class="{'date-selected': step === 'selectEndDate' }"
+          id="endDate"
           :value="endDate | dateFormat"
-          @focus="step = 'selectEndDate'" @blur="inputDate"
+          @focus="checkMonth($event);step = 'selectEndDate'" @blur="inputDate"
         >
       </div>
       <div class="form-group" v-if="allowCompare">
@@ -58,18 +62,22 @@
         </div>
         <div class="form-group form-inline flex-nowrap">
           <input type="text" class="form-control w-100 daterangepicker-date-input compare"
+            :class="{'date-compare-selected': step === 'selectStartDateCompare' }"
+            id="startDateCompare"
             ref="startDateCompare"
             :value="startDateCompare | dateFormat"
-            @focus="step = 'selectStartDateCompare'" @blur="inputDate"
+            @focus="checkMonth($event);step = 'selectStartDateCompare'" @blur="inputDate"
             @keyup.enter="inputDate"
           >
           <span class="mx-2">
           <font-awesome-icon icon="caret-right" fixed-width />
           </span>
           <input type="text" class="form-control w-100 daterangepicker-date-input compare"
+            :class="{'date-compare-selected': step === 'selectEndDateCompare' }"
+            id="endDateCompare"
             ref="endDateCompare"
             :value="endDateCompare | dateFormat"
-            @focus="step = 'selectEndDateCompare'" @blur="inputDate"
+            @focus="checkMonth($event);step = 'selectEndDateCompare'" @blur="inputDate"
             @keyup.enter="inputDate"
           >
         </div>
@@ -209,6 +217,7 @@ export default {
   },
   data: () => {
     return {
+      lastBlurTarget: null,
       dateChanged : false,
       selectedDateSubmit:false,
       selectedDate:null,
@@ -254,6 +263,23 @@ export default {
     },
     goToNextMonth: function() {
       this.month = moment(this.month).add(1, 'month')
+    },
+    goToSpecificMonth(dateFocusOri) {
+      const  dateFocus = moment(dateFocusOri);
+      if(dateFocus.subtract(1,'month').month() != this.month.month() &&  dateFocus.add(1,'month').month() != this.month.month())
+      {
+        this.month = moment(dateFocusOri).startOf('month');
+      }
+      
+    },
+    checkMonth(event) {
+      if( ~['startDate','endDate'].indexOf(event.target.getAttribute('id')) && this.endDate.isAfter(this.startDate) && ~['startDateCompare','endDateCompare'].indexOf(this.lastBlurTarget)) {
+
+          this.goToSpecificMonth(moment(this.endDate));
+      } 
+      else if (~['startDateCompare','endDateCompare'].indexOf(event.target.getAttribute('id')) && this.endDateCompare.isAfter(this.startDateCompare) && ~['startDate','endDate'].indexOf(this.lastBlurTarget)) {
+          this.goToSpecificMonth(moment(this.endDateCompare));
+      }
     },
     selectRange: function(rangeKey) {
       let predefinedRange = false
@@ -324,71 +350,95 @@ export default {
     },
     selectDate: function(date) {
 
-      if (this.step == 'selectStartDate') {
-        //this.endDate = date;
+      if (this.step === 'selectStartDate') {
+        // this.endDate = date;
         this.startDate = date;
-
-      } else if (this.step == 'selectEndDate') {
-        this.endDate = date
-      } else if (this.step == 'selectStartDateCompare') {
-        this.startDateCompare = date
-
-      } else if (this.step == 'selectEndDateCompare') {
-        this.endDateCompare = date
-      } else if(this.step == 'preSelectStartDateCompare') {
-          this.$refs.startDateCompare.focus();
-      }else {
-          this.$refs.startDate.focus();
+      } else if (this.step === 'selectEndDate') {
+        this.endDate = date;
+      } else if (this.step === 'selectStartDateCompare') {
+          this.startDateCompare = date;
+      } else if (this.step === 'selectEndDateCompare') {
+        this.endDateCompare = date;
       }
     
     },
     // Step flow for date range selections
     nextStep: function() {
-      if(this.step == null) {
-        this.step = 'selectStartDate'
+      if (this.step === null) {
+        this.step = 'selectStartDate';
         this.$refs.startDate.focus();
-      }
-      else if (this.step == 'selectStartDate') {
-        
+      } else if (this.step === 'selectStartDate') {
         this.step = 'selectEndDate';
-        this.$refs.endDate.focus()
-      } else if (this.step == 'selectEndDate') {
+        var v =this;
+        setTimeout(function(){
+          v.$nextTick(() => {
+            v.$refs.endDate.focus();
+          });
+        })
+        //this.$refs.endDate.focus();
+      } else if (this.step === 'selectEndDate') {
+        this.step = null;
 
-          this.step = null
-        
-        if(this.compare && this.rangeSelectCompare !=='custom' ){
+        if (this.compare && this.rangeSelectCompare !== 'custom') {
           this.selectRangeCompare(this.rangeSelectCompare);
-        } else if(this.compare && this.rangeSelectCompare ==='custom'){
-          this.step = 'preSelectStartDateCompare';
+        } else if (this.compare && this.rangeSelectCompare === 'custom') {
+          this.step = 'selectStartDateCompare';
         }
-        this.$refs.endDate.blur()
-      } 
-      else if (this.step == 'selectStartDateCompare') {
-        this.step = 'selectEndDateCompare'
-        this.$refs.endDateCompare.focus()
-      } else if (this.step == 'selectEndDateCompare') {
-         
-            this.step = null
-            this.$refs.endDateCompare.blur()
-          
-       
-         
+        this.$refs.endDate.blur();
+      } else if (this.step === 'selectStartDateCompare') {
+        this.step = 'selectEndDateCompare';
+        var v =this;
+        setTimeout(function(){
+          v.$nextTick(() => {
+            v.$refs.endDateCompare.focus();
+          });
+        })
+        
+        
+      } else if (this.step === 'selectEndDateCompare') {
+        this.step = null;
+        this.$refs.endDateCompare.blur();
       }
     },
     // Try to update the step date from an input value
     inputDate: function(input) {
-      let date = moment(input.target.value, 'YYYY-MM-DD')
+      if(input.target.getAttribute('id') === 'startDate' 
+         ) {
+         
+          this.lastBlurTarget = 'startDate';
+        }
+        else if(input.target.getAttribute('id') === 'endDate'
+         ) {
+         
+          this.lastBlurTarget = 'endDate';
+        }  
+        else if(input.target.getAttribute('id') === 'startDateCompare'
+         ) {
+          
+          this.lastBlurTarget = 'startDateCompare';
+        }
+        else if(input.target.getAttribute('id') === 'endDateCompare' 
+         ) {
+         
+          this.lastBlurTarget = 'endDateCompare';
+        }
+      const date = moment(input.target.value, 'YYYY-MM-DD')
       if (date.isValid()) {
         this.selectDate(date)
         this.selectedDateSubmit = true;
-      }
-      if(this.step == 'selectEndDate' || this.step== 'selectEndDateCompare') {
-        this.nextStep();
       }
       
     },
     // Submit button
     submit: function() {
+      if(this.endDate.isBefore(this.startDate) || this.endDateCompare.isBefore(this.startDateCompare)) {
+        if (this.selectedDate) {
+          this.startDate = this.selectedDate.startDate;
+          this.endDate = this.selectedDate.endDate;
+          this.startDateCompare = this.selectedDate.startDateCompare;
+          this.endDateCompare = this.selectedDate.endDateCompare;
+        }
+      }
       const dataSubmit = {
         startDate: this.startDate,
         endDate: this.endDate,
@@ -532,6 +582,22 @@ export default {
 /* Custom row */
 .daterangepicker-row {
   margin: -0.5rem;
+}
+
+.date-selected {
+  border: 1px solid #0077cc !important;
+}
+
+#startDate:focus,#endDate:focus {
+  border: 1px solid #0077cc !important;
+}
+
+.date-compare-selected {
+  border: 1px solid #ff9307 !important;
+}
+
+#startDateCompare:focus,#endDateCompare:focus {
+  border: 1px solid #ff9307 !important;
 }
 
 .daterangepicker-col {
