@@ -266,19 +266,26 @@ export default {
     },
     goToSpecificMonth(dateFocusOri) {
       const  dateFocus = moment(dateFocusOri);
-      if(dateFocus.subtract(1,'month').month() != this.month.month() &&  dateFocus.add(1,'month').month() != this.month.month())
+      if((dateFocus.year() != this.month.year() ) || (dateFocus.year() == this.month.year() && 
+          dateFocus.subtract(1,'month').month() != this.month.month() && dateFocus.add(1,'month').month() != this.month.month())
+          )
       {
         this.month = moment(dateFocusOri).startOf('month');
       }
       
     },
     checkMonth(event) {
+
       if( ~['startDate','endDate'].indexOf(event.target.getAttribute('id')) && this.endDate.isAfter(this.startDate) && ~['startDateCompare','endDateCompare'].indexOf(this.lastBlurTarget)) {
 
           this.goToSpecificMonth(moment(this.endDate));
       } 
       else if (~['startDateCompare','endDateCompare'].indexOf(event.target.getAttribute('id')) && this.endDateCompare.isAfter(this.startDateCompare) && ~['startDate','endDate'].indexOf(this.lastBlurTarget)) {
           this.goToSpecificMonth(moment(this.endDateCompare));
+      } else if ( ~['startDate','endDate'].indexOf(event.target.getAttribute('id'))) {
+        this.goToSpecificMonth(moment(this.endDate));
+      } else if ( ~['startDateCompare','endDateCompare'].indexOf(event.target.getAttribute('id'))) {
+        this.goToSpecificMonth(moment(this.endDateCompare));
       }
     },
     selectRange: function(rangeKey) {
@@ -296,6 +303,7 @@ export default {
           if (!this.endDate.isSame(range.endDate)) {
             this.endDate = moment(range.endDate)
           }
+          this.$refs.startDate.focus();
         }
       }
 
@@ -331,6 +339,10 @@ export default {
           }
           if (!this.endDateCompare.isSame(resultDate.endDate)) {
             this.endDateCompare = moment(resultDate.endDate)
+          }
+
+          if(this.$refs.startDateCompare) {
+             this.$nextTick(() => this.$refs.startDateCompare.focus());
           }
         }
       }

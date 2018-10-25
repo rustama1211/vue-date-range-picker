@@ -62,6 +62,9 @@ export default {
     }
   },
   methods: {
+     getCurrentDay() {
+      return moment();
+    },
     dayClass: function(day) {
       let classes = []
       
@@ -87,6 +90,11 @@ export default {
         classes.push('date-disabled');
       }
 
+      const currentDay = this.getCurrentDay();
+      if (day.isAfter(currentDay, 'day')) {
+        classes.push('date-disabled');
+      }
+
       return classes.join(' ')
     },
     dayMouseOver: function(day) {
@@ -94,36 +102,26 @@ export default {
         this.selectDate(day)
       }*/
     },
-    dayClick: function(day) {
+    dayClick(day) {
+      const currentDay = this.getCurrentDay();
+      if (this.step === 'selectEndDate' && day.isBefore(this.startDate)) {
+          return;
+      }
+      if (this.step === 'selectEndDateCompare' && day.isBefore(this.startDateCompare)) {
+        return;
+      }
+      if ( day.isAfter(currentDay,'day')) {
+        return;
+      }
+
       if (this.step != null) {
-       
-        if(this.step == 'selectEndDate' && day.isBefore(this.startDate)) {
-          
-          return;
-        }
-        if(this.step == 'selectEndDateCompare' && day.isBefore(this.startDateCompare)) {
-          return;
-        }
-        
         this.selectDate(day);
-        this.nextStep()
-      }
-      else
-      {
-        
-        if(this.step == 'selectEndDate' && day.isBefore(this.startDate)) {
-          return;
-        }
-        if(this.step == 'selectEndDateCompare' && day.isBefore(this.startDateCompare)) {
-          return;
-        }
+        this.nextStep();
+      } else {
         this.nextStep();
         this.selectDate(day);
         this.nextStep();
-        
-
       }
-
     },
     goToPrevMonth: function() {
       this.$emit('goToPrevMonth')
